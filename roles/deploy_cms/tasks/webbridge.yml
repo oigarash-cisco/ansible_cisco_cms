@@ -1,0 +1,48 @@
+- name: Disable webbridge
+  raw: webbridge disable
+- name: Set certs
+  raw: webbridge certs allinone.key allinone.crt
+- name: Set interface/port
+  set_fact:
+    wb_if_ports: >
+      {%- for i in webbridge_interfaces -%}
+      {{- i.interface }}:{{ i.port -}}
+      {%- endfor -%}
+- name: Listen ports
+  raw: webbridge listen {{ wb_if_ports }}
+- name: Trust Callbridge cert
+  raw: webbridge trust allinone.crt
+- name: Enable HTTP Redirect
+  raw: webbridge http-redirect enable
+  when: webbridge_http_redirect
+- name: Enable Webadmin
+  raw: webbridge enable
+  register: res
+  failed_when: res.stdout.find("FAILURE") > -1
+- name: Get status of webbridge
+  raw: webbridge
+  register: res
+- name: webbridge status
+  debug:
+    msg: "{{ res.stdout_lines }}"
+# Add Web Bridge to CallBridge
+- name: Add WebBridges
+  uri:
+    url: https://{{ ansible_host }}:{{ webadmin_port | default('8443') }}/api/v1/webBridges
+    method: POST
+    force_basic_auth: yes
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    body_format: form-urlencoded
+    body:
+      url: "{{ inventory_hostname }}.{{ domain }}"
+      idEntryMode: secure
+      allowWeblinkAccess: "{{ 'true' if webbridge_allow_weblink_access else 'false' }}"
+      showSignIn: "{{ 'true' if webbridge_show_signin else 'false' }}"
+      resolveCoSpaceCallIds: "{{ 'true' if webbridge_resolve_cospace_callids else 'false' }}"
+      resolveLyncConferenceIds: "{{ 'true' if webbridge_resolve_lync_conference_ids else 'false' }}"
+    status_code:
+      - 200
+      - 400  # Return if entry aleady exists
+  delegate_to: localhost

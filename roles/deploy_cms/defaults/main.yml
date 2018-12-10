@@ -1,0 +1,25 @@
+domain: example.com
+callbridge_interfaces:
+  - a
+webadmin_interfaces:
+  - a
+webadmin_port: 445
+webadmin_http_redirect: True
+xmpp_interfaces:
+  - a
+xmpp_domain: "{{ domain }}"
+webbridge_interfaces:
+  - interface: a
+    port: 443
+webbridge_http_redirect: True
+webbridge_id_entry_mode: secure
+webbridge_allow_weblink_access: True
+webbridge_show_signin: True
+webbridge_resolve_cospace_callids: True
+webbridge_resolve_lync_conference_ids: False
+turn_nat_public_ip: None
+turn_username: turn_user
+turn_password: turn_password
+turn_interfaces:
+  - a
+turn_tls_port: None

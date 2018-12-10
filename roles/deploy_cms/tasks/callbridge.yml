@@ -1,0 +1,26 @@
+- name: Set certs
+  raw: callbridge certs allinone.key allinone.crt
+- name: Listen ports
+  raw: callbridge listen {{ callbridge_interfaces | join(" ") }}
+- name: Restart callbridge
+  raw: callbridge restart
+  register: res
+  failed_when: res.stdout.find("FAILURE") > -1
+- name: Get status of callbridge
+  raw: callbridge
+  register: res
+- name: callbridge status
+  debug:
+    msg: "{{ res.stdout_lines }}"
+- name: Verify Web Service ready
+  uri:
+    url: https://{{ ansible_host }}:{{ webadmin_port }}/api/v1/callBridges
+    force_basic_auth: yes
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+  register: res
+  until: 100 <= res.status < 500
+  retries: 5
+  delay: 10
+  delegate_to: localhost

@@ -1,0 +1,13 @@
+Value Required name ([\w\-]+)
+Value Required hostname ([\w\-]+)
+Value Required secret (\w+)
+Value Required domain ([\w\.\-]+)
+
+Start
+  ^\s\*{3} -> Record Entry
+
+Entry
+  ^Callbridge\s+:\s${name} -> Continue
+  ^Callbridge\s+:\scb_${hostname}
+  ^Domain\s+:\s${domain}
+  ^Secret\s+:\s${secret} -> Start

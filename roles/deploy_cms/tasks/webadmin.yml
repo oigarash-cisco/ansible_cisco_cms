@@ -1,0 +1,16 @@
+- name: Disble webadmin
+  raw: disable webadmin
+- name: Set certs for webadmin
+  raw: webadmin certs allinone.key allinone.crt
+- name: Listen ports for webadmin
+  raw: webadmin listen {{ webadmin_interfaces | join(" ") }} {{ webadmin_port }}
+- name: Enable Webadmin
+  raw: webadmin enable
+  register: res
+  failed_when: res.stdout.find("FAILURE") > -1
+- name: Get status of webadmin
+  raw: webadmin
+  register: res
+- name: webadmin status
+  debug:
+    msg: "{{ res.stdout_lines }}"

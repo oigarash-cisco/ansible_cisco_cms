@@ -1,0 +1,23 @@
+# Cert
+- name: Generate self-signed cert
+  raw: pki selfsigned allinone
+# Webadmin
+- name: Set WebAdmin
+  import_tasks: webadmin.yml
+  tags: webadmin
+# Callbridge
+- name: Set Callbridge
+  import_tasks: callbridge.yml
+  tags: callbridge
+# Webbridge
+- name: Set Webbridge
+  import_tasks: webbridge.yml
+  tags: webbridge
+# XMPP
+- name: Set XMPP Master
+  import_tasks: xmpp.yml
+  tags: xmpp
+# TURN
+- name: Set TURN
+  import_tasks: turn.yml
+  tags: turn

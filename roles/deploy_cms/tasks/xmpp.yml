@@ -1,0 +1,53 @@
+- name: Disable xmpp
+  raw: xmpp disable
+- name: Reset xmpp
+  raw: xmpp reset
+- name: Set certs
+  raw: xmpp certs allinone.key allinone.crt
+- name: Listen ports
+  raw: xmpp listen {{ xmpp_interfaces | join(" ") }}
+- name: Set XMPP Domain
+  raw: xmpp domain {{ xmpp_domain }}
+- name: Enable XMPP
+  raw: xmpp enable
+  register: res
+  failed_when: res.stdout.find("FAILURE") > -1
+- name: Add callbridge to xmpp
+  raw: xmpp callbridge add cb_{{ inventory_hostname }}
+  register: res
+  until: res.stdout.find('Success') > -1
+  retries: 3
+  delay: 10
+- name: Get secrets for xmpp
+  raw: xmpp callbridge list
+  register: cb_res
+- name: parse output of xmpp callbridge list
+  set_fact:
+    xmpp_callbridge: "{{ cb_res.stdout | parse_cli_textfsm(role_path + '/files/xmpp_callbridge_list.fsm') }}"
+- name: Get status of xmpp
+  raw: xmpp
+  register: res
+- name: xmpp status
+  debug:
+    msg: "{{ res.stdout_lines }}"
+- name: Get status of xmpp callbridge list
+  raw: xmpp callbridge list
+  register: res
+- name: xmpp callbridge list
+  debug:
+    msg: "{{ res.stdout_lines }}"
+# Add Callbridge to XMPP
+- name: Add CallBridges to XMPP Service
+  uri:
+    url: https://{{ ansible_host }}:{{ webadmin_port }}/api/v1/system/configuration/xmpp
+    method: PUT
+    force_basic_auth: yes
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    body_format: form-urlencoded
+    body:
+      uniqueName: "{{ xmpp_callbridge[0].name }}"
+      domain: "{{ xmpp_domain }}"
+      sharedSecret: "{{ xmpp_callbridge[0].secret }}"
+  delegate_to: localhost

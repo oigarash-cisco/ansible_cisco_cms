@@ -1,0 +1,8 @@
+---
+- name: Deploy Stand alone CMS
+  strategy: debug
+  gather_facts: no
+  hosts: all
+  tasks:
+    - import_role:
+        name: deploy_cms

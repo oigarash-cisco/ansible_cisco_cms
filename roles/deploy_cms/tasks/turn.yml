@@ -1,0 +1,50 @@
+- name: Disalbe turn
+  raw: turn disable
+- name: Set turn_realm as domain if not defined
+  set_fact:
+    turn_realm: "{{ domain }}"
+- name: Set certs for turn
+  raw: turn certs allinone.key allinone.crt
+- name: Set credentials
+  raw: turn credentials {{ turn_username }} {{ turn_password }} {{ turn_realm }}
+- name: turn public ip
+  raw: turn public-ip "{{ turn_nat_public_ip }}"
+  when: turn_nat_public_ip
+- name: In case Combined CMS, lo is second interface
+  set_fact:
+    turn_interfaces: "{{ turn_interfaces + ['lo'] }}"
+  when:
+    - turn_interfaces | length == 1
+- name: Set turn interface
+  raw: turn listen {{ turn_interfaces | join(" ") }}
+# FIXME: In case webbredge and turn listen same VM/Port/Interface
+- name: Set tls port
+  raw: turn tls {{ turn_port }}
+  when: turn_tls_port
+- name: Enable turn
+  raw: turn enable
+  register: res
+  failed_when: res.stdout.find("FAILURE") > -1
+- name: Get status of turn
+  raw: turn
+  register: res
+- name: turn status
+  debug:
+    msg: "{{ res.stdout_lines }}"
+# Add callbridge to TURN Server
+- name: Add TURN Servers to CallBridge
+  uri:
+    url: https://{{ ansible_host }}:{{ webadmin_port }}/api/v1/turnServers
+    method: POST
+    force_basic_auth: yes
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    body_format: form-urlencoded
+    body:
+      serverAddress: "{{ ansible_host }}"
+      clientAddress: "{{ ansible_host }}"
+      username: "{{ turn_username }}"
+      password: "{{ turn_password }}"
+      type: cms
+  delegate_to: localhost
